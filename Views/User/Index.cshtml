@@ -1,0 +1,123 @@
+﻿@model List<ApplicationUser>
+<partial name="_notification" />
+<div class="card shadow border-0 my-4">
+    <div class="card-header bg-secondary bg-gradient m-lg-0 py-2">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h2 class="text-white ">User List</h2>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-4">
+
+        <table id="example" class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Company</th>
+                    <th>Role</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var user in Model)
+                {
+                    <tr>
+                        <td>@user.Name</td>
+                        <td>@user.Email</td>
+                        <td>@user.PhoneNumber</td>
+                        <td>@user.Company.Name</td>
+                        <td>@user.Role</td>
+                        <td>
+                           @if(user.LockoutEnd>user.Today)
+                            {
+                                <div class="text-center">
+                                    <div class="btn-group" role="group" style="display: flex; justify-content: center;">
+                                        <a onclick="LockUnlock('@user.Id')" class="btn btn-success text-white" style="cursor:pointer;width:100px; margin-right: 10px;">
+                                            <i class="bi bi-unlock-fill"></i> UnLock
+                                        </a>
+                                        <a class="btn btn-danger text-white" style="cursor:pointer;width:150px;">
+                                            <i class="bi bi-pencil-square"></i> Permission
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center">
+                                    <div  class="btn-group" role="group" style="display: flex; justify-content: center;">
+                                        <a onclick="LockUnlock('@user.Id')" class="btn btn-danger text-white" style="cursor:pointer;width:100px; margin-right: 10px;">
+                                            <i class="bi bi-lock-fill"></i> Lock
+                                        </a>
+                                        <a class="btn btn-danger text-white" style="cursor:pointer;width:150px;">
+                                            <i class="bi bi-pencil-square"></i> Permission
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                            
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function () {
+        $('#example').DataTable(); // Initialize DataTables on your table with id 'example'
+    });
+</script>
+<script>
+    function LockUnlock(id) {
+        console.log('User ID:', id);
+        if (id) {
+            // Proceed with AJAX call
+            $.ajax({
+                type: "POST",
+                url: '/User/LockUnlock',
+                data: JSON.stringify(id),
+                contentType: "application/json",
+                success: function (data) {
+                    if (data.success) {
+                        updateTable(data.user); // Reload the DataTable on success
+                    } else {
+                        alert('Lock/Unlock operation failed. Please try again.'); // Show an alert if operation fails
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error(xhr.responseText); // Log the error message to console
+                    alert('An error occurred while processing your request. Please try again later.'); // Show an alert for any unexpected errors
+                }
+            });
+        }
+        else {
+            console.error('User ID is null or undefined');
+        }
+        
+    }
+
+    function updateTable(user) {
+        consol.log(user);
+        var table = $('#example').DataTable();
+        var row = table.row('#' + user.Id); // Assuming each row has a unique ID corresponding to user's ID
+
+        // If the row exists, update its content with the new user data
+        if (row) {
+            var rowData = row.data();
+            rowData[0] = user.Name; // Assuming the first column is for user's name
+            rowData[1] = user.Email; // Assuming the second column is for user's email
+            rowData[2] = user.PhoneNumber; // Assuming the third column is for user's phone number
+            rowData[3] = user.Company.Name; // Assuming the fourth column is for user's company name
+            rowData[4] = user.Role; // Assuming the fifth column is for user's role
+            row.data(rowData).draw(false); // Update the row data and redraw the table without refreshing
+        } else {
+            // If the row does not exist, you can either add it or handle the case as per your requirement
+            console.error('Row not found for user with ID:', user.Id);
+        }
+    }
+</script>
